@@ -1,9 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";   // ✅ importer cors
+import cors from "cors";
 import { connectDB } from "./config/db.js";
 import { SECRETS } from "./config/secrets.js";
-// import userRoutes from "./routes/userRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 
@@ -12,23 +11,33 @@ connectDB();
 
 const app = express();
 
-// ✅ Autoriser les requêtes venant du frontend
-app.use(cors({ origin: "http://localhost:5173" }));
-// si ton frontend est en CRA => mets http://localhost:3000
+// ✅ Lire les origines autorisées depuis .env
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // autoriser si pas d’origin (Postman) ou si l’origin est dans la liste
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
 app.use(express.json());
 
-// Route de test
+// Test route
 app.get("/", (req, res) => {
-    res.send("Hello World ✅");
+  res.send("Hello World ✅");
 });
 
-// Routes utilisateurs
-// app.use("/users", userRoutes);
+// Routes
 app.use("/blogs", blogRoutes);
 app.use("/auth", authRoutes);
 
-// Démarrage du serveur
+// Lancer serveur
 app.listen(SECRETS.PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${SECRETS.PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${SECRETS.PORT}`);
 });
